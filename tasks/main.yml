@@ -1,12 +1,5 @@
 ---
 # tasks file for play/roles/lxc-node
-- name: Get LXD info
-  shell: "lxc remote list | grep pocweb-safe | awk '{print $4}'"
-  register: output
-  delegate_to: localhost
-- name: Set LXD info
-  set_fact: 
-    lxc_lxd_url: "{{ output.stdout }}"
 - name: Create container with LXD
   become: false
   local_action: 
@@ -15,7 +8,7 @@
     state: started
     cert_file: "{{ lxc_client_cert }}"
     key_file: "{{ lxc_client_key }}"
-    url: "{{ lxc_lxd_url }}"
+    url: "https://{{ hostvars[lxc_lxd_host].address }}:{{ lxc_lxd_port }}"
     source:
       type: image
       mode: pull
@@ -24,7 +17,10 @@
       alias: "{{ lxc_container_distro }}"
     profiles: "{{ lxc_profiles }}"
     wait_for_ipv4_addresses: true
-    timeout: 10
+    timeout: 60
+- name: debug
+  debug:
+    msg: "url === {{ hostvars[lxc_lxd_host].address }}"
 
 - name: Set temporary ansible_host for lxd connection
   set_fact:
@@ -56,7 +52,8 @@
   connection: lxd
   become: false
   lineinfile:
-    path: /etc/sudoers
+#    path: /etc/sudoers
+    name: /etc/sudoers
     state: present
     regexp: '^%sudo\s'
     line: '%sudo ALL=(ALL) NOPASSWD: ALL'
@@ -96,5 +93,14 @@
   set_fact:
     ansible_host: "{{ inventory_hostname }}"
 
+- name: check connectivity
+  ping:
+  register: ping_result
+
+- name: Debug
+  debug:
+    var: ping_result
+
 - name: Gather facts
   setup:
+  when: ping_result

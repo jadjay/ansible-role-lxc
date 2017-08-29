@@ -11,4 +11,6 @@ lxc_lxd_port: "8443"
 lxc_client_key: "{{ lookup('env', 'HOME') }}/.config/lxc/client.key"
 lxc_client_cert: "{{ lookup('env', 'HOME') }}/.config/lxc/client.crt"
 
-lxc_user_ssh_key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_ed25519.pub') }}"
+lxc_user_ssh_key: "{{ lookup('pipe', 'cat ' + lookup('env','HOME') + '/.ssh/*.pub') }}"
+
+ansible_ssh_user: ubuntu
